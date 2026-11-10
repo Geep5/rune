@@ -147,7 +147,8 @@ fn unit_at(e: &crate::edit::TextEdit, h: Hit, unit: Unit) -> (usize, usize) {
 impl<S: 'static> Runtime<S> {
     /// A press at (x, y) on text field `ji`, down at `down_at`; `second` when it's the second
     /// of a double press.
-    pub(super) fn input_down(&mut self, ji: usize, x: f32, y: f32, down_at: f64, second: bool) {
+    /// `link`: the link of the field's text under the press, if any.
+    pub(super) fn input_down(&mut self, ji: usize, x: f32, y: f32, down_at: f64, second: bool, link: Option<usize>) {
         let now = self.now_clock();
         let shift = self.held_mods.shift;
         // Its text drew scaled or rotated with its box: map the press back to the rest layout.
@@ -162,6 +163,9 @@ impl<S: 'static> Runtime<S> {
         } else {
             self.input_click.presses.press(&path, now, (x, y), self.double_click_interval).min(3) as u8
         };
+        // A click on a link in a field opens it, as in text that isn't editable; releasing
+        // elsewhere, dragging a selection, or a double or shift click opens nothing.
+        let link = link.filter(|_| clicks == 1 && !shift);
         self.input_click.capture = Capture::Held { dragging: Some(path.clone()) };
         self.input_click.steps.push_back((path.clone(), Step::Down { clicks, shift }));
         self.queue.push(Action::Focus(path.clone(), ix, iy));
@@ -181,7 +185,7 @@ impl<S: 'static> Runtime<S> {
             window: [x, y],
             screen: self.screen_at(x, y),
         };
-        self.press.hold(capture::Held::new(path, d, crate::PointerButton::Primary, (x, y), down_at, second, None));
+        self.press.hold(capture::Held::new(path, d, crate::PointerButton::Primary, (x, y), down_at, second, None).on_link(link));
     }
 
     pub(super) fn input_drag(&mut self, x: f32, y: f32, drag_move: bool) {

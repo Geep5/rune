@@ -234,7 +234,7 @@ impl<S: 'static> Runtime<S> {
             first.path == n.path && press_run::follows(first.at, first.point, now, (x, y), self.double_click_interval)
         });
         if let Some(ji) = self.textbox_input(ti) {
-            self.input_down(ji, x, y, now, second);
+            self.input_down(ji, x, y, now, second, link.filter(|_| ji == ti));
             return;
         }
         // Clicking a link leaves focus where it is (a composer keeps typing). Selectable text
@@ -334,7 +334,11 @@ impl<S: 'static> Runtime<S> {
         let capture::Held { path, drag: d, button, at, down_at, moved, second: double, link, .. } = *held;
         self.refresh_hover_within();
         if moved { self.press_clicks.clear(); }
-        if input_capture { return; }
+        if input_capture {
+            // A field's press that began on its link and ends there unmoved opens it.
+            if let Some(k) = link.filter(|_| inside && !selected && !moved) { self.link_up(&path, k, x, y); }
+            return;
+        }
         let Some(i) = self.live_index(&path) else { return };
         let n = &self.nodes[i];
         let (has_drag, has_press, has_double) = (n.handlers.on_drag.is_some() && !self.drags_out(n), n.handlers.on_press.is_some(), n.handlers.on_double_press.is_some());

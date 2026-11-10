@@ -1,0 +1,1 @@
+- **A click on a link in a text field opens it.** A `Mark::Link` in a `text_input` drew as a link but a press on it only placed the caret: the field's release returned before the link's, so `El::on_link` never ran. A single click that starts and ends on the link now calls it (the caret still lands there); a drag that selects, a double click or a shift click opens nothing.
