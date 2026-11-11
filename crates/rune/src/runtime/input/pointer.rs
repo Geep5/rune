@@ -322,7 +322,12 @@ impl<S: 'static> Runtime<S> {
         let capture::Held { path, drag: d, button, at, down_at, moved, second: double, .. } = *held;
         self.refresh_hover_within();
         if moved { self.press_clicks.clear(); }
-        if input_capture { return; }
+        if input_capture {
+            // A field's link (a rich `Mark::Link`) opens on a plain click, as a link in
+            // read-only text does; a press that dragged or selected stays an edit.
+            self.link_up(&path, x, y, inside && !moved && !selected && !double);
+            return;
+        }
         let Some(i) = self.live_index(&path) else { return };
         let n = &self.nodes[i];
         let (has_drag, has_press, has_double) = (n.handlers.on_drag.is_some() && !self.drags_out(n), n.handlers.on_press.is_some(), n.handlers.on_double_press.is_some());
