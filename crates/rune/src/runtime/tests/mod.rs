@@ -12,6 +12,7 @@ mod glyph_replay;
 mod group_opacity;
 mod id_pruning;
 mod input_clipboard;
+mod input_link;
 mod layout_hover;
 mod layout_reads;
 mod layout_rows;
