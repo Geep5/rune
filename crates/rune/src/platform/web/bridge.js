@@ -163,6 +163,10 @@ export function mount(canvas, callback, embedded, fitHeight, page) {
             const chord = event.metaKey || event.ctrlKey;
             const editing = ['Enter', 'Tab', 'Escape', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'];
             if (field === password) editing.push('Backspace', 'Delete');
+            // Backspace with the caret at the very start of the field deletes nothing, so the
+            // browser fires no input and the app never heard it: send it as a key, as native
+            // platforms do (an editor merges the line into the one above, or drops its style).
+            else if (h.base === 0 && textarea.selectionStart === 0 && textarea.selectionEnd === 0) editing.push('Backspace');
             if (!chord && !editing.includes(event.key)) return;
             if (chord && event.key.toLowerCase() === 'v') return;
             event.preventDefault();
