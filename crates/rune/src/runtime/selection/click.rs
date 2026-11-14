@@ -176,7 +176,10 @@ impl<S: 'static> Runtime<S> {
             window: [x, y],
             screen: self.screen_at(x, y),
         };
-        self.press.hold(capture::Held::new(path, d, crate::PointerButton::Primary, (x, y), down_at, second, None));
+        // A press on one of the field's links (a rich `Mark::Link`) remembers it: a plain click
+        // opens it, as in read-only text.
+        let link = self.link_at(ji, x, y);
+        self.press.hold(capture::Held::new(path, d, crate::PointerButton::Primary, (x, y), down_at, second, None).on_link(link));
     }
 
     /// Focuses text field `ji` with its caret at (x, y), as a single click does, but holds no

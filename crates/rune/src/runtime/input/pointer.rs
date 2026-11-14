@@ -405,7 +405,9 @@ impl<S: 'static> Runtime<S> {
         if input_capture {
             // A field's link (a rich `Mark::Link`) opens on a plain click, as a link in
             // read-only text does; a press that dragged or selected stays an edit.
-            self.link_up(&path, x, y, inside && !moved && !selected && !double);
+            if let Some(k) = link.filter(|_| inside && !moved && !selected && !double) {
+                self.link_up(&path, k, x, y, button);
+            }
             return;
         }
         let Some(i) = self.live_index(&path) else { return };
