@@ -385,6 +385,10 @@ impl<S: 'static> Runtime<S> {
             return crate::el::Cursor::Default;
         };
         if self.nodes[i].handlers.cursor.is_none() && (self.nodes[i].input.is_some() || self.nodes[i].role == "textbox") {
+            // A field's link opens on a plain click, so it shows the hand, as in read-only text.
+            if self.press.path().is_none() && self.link_at(i, x, y).is_some() {
+                return crate::el::Cursor::Pointer;
+            }
             return crate::el::Cursor::Text;
         }
         if self.is_selectable(i) && !self.text_sel.dragging && self.link_at(i, x, y).is_some() {

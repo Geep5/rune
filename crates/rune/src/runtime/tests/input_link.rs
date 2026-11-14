@@ -56,3 +56,18 @@ fn a_drag_across_a_link_in_a_text_field_selects_without_opening() {
     rt.frame(0.0);
     assert!(rt.state.opened.is_empty(), "{:?}", rt.state.opened);
 }
+
+/// Over the link the pointer is a hand, as over a link in read-only text; off it, not.
+#[test]
+fn the_pointer_is_a_hand_over_a_link_in_a_text_field() {
+    let mut rt = Runtime::new(State { edit: field(), ..State::default() }, view, (300.0, 100.0), Env::new(true, 1.0));
+    rt.frame(0.0);
+    let (x, y) = rt.find(URL).expect("the link is drawn");
+    rt.pointer_move(x + 2.0, y + 2.0);
+    rt.frame(0.0);
+    assert_eq!(rt.cursor(), crate::el::Cursor::Pointer);
+    // Over "see the", before the link.
+    rt.pointer_move(x - 30.0, y + 2.0);
+    rt.frame(0.0);
+    assert_ne!(rt.cursor(), crate::el::Cursor::Pointer, "the hand is only over the link");
+}
