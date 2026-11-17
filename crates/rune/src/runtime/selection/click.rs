@@ -46,6 +46,9 @@ pub(super) struct InputClick {
     capture: Capture,
     /// Queued press/drag steps paired with `Action::Focus` entries in `Runtime::queue`.
     steps: VecDeque<(String, Step)>,
+    /// The field's selection before the last plain press placed the caret: `on_link` taking
+    /// the press puts it back.
+    pub(super) before: Option<(String, usize, usize)>,
 }
 
 impl InputClick {
@@ -214,6 +217,16 @@ impl<S: 'static> Runtime<S> {
         self.queue.push(Action::Focus(path, ix, iy));
     }
 
+    /// `Tx::take_press` in a field's `on_link`: the caret and selection go back to where they
+    /// were before the press, and the press run starts over (no double click from it).
+    pub(super) fn restore_before_press(&mut self, path: &str) {
+        self.input_click.presses.clear();
+        let Some((p, anchor, focus)) = self.input_click.before.take() else { return };
+        if p != path { return }
+        let Some(access) = self.node(path).and_then(|n| n.input.as_ref()?.access.clone()) else { return };
+        access(states!(self)).set_selection(anchor, focus);
+    }
+
     pub(super) fn focus_input(&mut self, path: String, x: f32, y: f32, one: &mut Tx) -> bool {
         let step = if self.input_click.steps.front().is_some_and(|(p, _)| *p == path) {
             self.input_click.steps.pop_front().unwrap().1
@@ -233,7 +246,7 @@ impl<S: 'static> Runtime<S> {
         let scroll = self.input_scroll.get(&path).copied().unwrap_or(0.0);
         match step {
             Step::Down { clicks, shift } => {
-                self.set_focus(Some(path), false);
+                self.set_focus(Some(path.clone()), false);
                 // A press mid-composition writes it into the text first, as a browser's field
                 // does, then puts the caret where it landed: the layout it hits already shows
                 // the composition in place.
@@ -247,6 +260,7 @@ impl<S: 'static> Runtime<S> {
                     one.commit = one.commit.instant();
                     return true;
                 }
+                self.input_click.before = Some((path.clone(), e.anchor, e.focus));
                 if let Some(l) = layout {
                     let h = hit(e, l.view(), x + scroll, y, s, single);
                     if shift {

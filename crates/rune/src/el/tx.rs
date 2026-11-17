@@ -16,6 +16,8 @@ mod tests;
 /// What a handler may say about the commit it causes.
 #[derive(Clone, Debug, Default)]
 pub struct Tx {
+    /// `Tx::take_press`.
+    pub(crate) press_taken: bool,
     pub(crate) shortcut_activation_token: Option<String>,
     pub(crate) key_repeat: bool,
     /// `Tx::drag_repeat`.
@@ -675,6 +677,12 @@ impl Tx {
     /// use [`Tx::settle`] to land running tracks.
     pub fn instant(&mut self) {
         self.commit = self.commit.instant();
+    }
+    /// In `El::on_link` for a link in a text field: the click was the link's (a task box ticked,
+    /// a chip pressed), so the field keeps the caret and selection it had before the press, and
+    /// the click doesn't start a double click. A press that dragged never reaches `on_link`.
+    pub fn take_press(&mut self) {
+        self.press_taken = true;
     }
     /// Animate this change even where the runtime would apply it at once, as it does a drag's
     /// moves, or a commit no input in this window caused (`El::transition`: those mount and

@@ -71,3 +71,41 @@ fn the_pointer_is_a_hand_over_a_link_in_a_text_field() {
     rt.frame(0.0);
     assert_ne!(rt.cursor(), crate::el::Cursor::Pointer, "the hand is only over the link");
 }
+
+fn taking_view(s: &State, _: &mut Cx<State>) -> El {
+    col().size(300.0, 100.0).child(
+        crate::text_input(&s.edit, crate::TextStyle::new(14.0, 400.0))
+            .key("field")
+            .w(280.0)
+            .on_edit(|s: &mut State| &mut s.edit)
+            .on_link(|s: &mut State, url, tx| {
+                s.opened.push(url.into());
+                tx.take_press();
+            }),
+    )
+}
+
+fn click(rt: &mut Runtime<State>, x: f32, y: f32) {
+    rt.pointer_move(x, y);
+    rt.pointer_down(x, y);
+    rt.pointer_up(x, y);
+    rt.frame(0.0);
+}
+
+/// A range that acts as a button (a task box) takes the press: clicking it leaves the caret
+/// and selection where they were, and a second quick click is another click, not a double
+/// click that selects a word.
+#[test]
+fn a_link_that_takes_the_press_keeps_the_caret_and_selection() {
+    let mut edit = field();
+    edit.set_selection(0, 3);
+    let mut rt = Runtime::new(State { edit, ..State::default() }, taking_view, (300.0, 100.0), Env::new(true, 1.0));
+    rt.frame(0.0);
+    let (x, y) = rt.find(URL).expect("the link is drawn");
+    click(&mut rt, x + 2.0, y + 2.0);
+    assert_eq!(rt.state.opened, [URL]);
+    assert_eq!((rt.state.edit.anchor, rt.state.edit.focus), (0, 3), "the selection stays");
+    click(&mut rt, x + 2.0, y + 2.0);
+    assert_eq!(rt.state.opened, [URL, URL], "a second quick click is another click");
+    assert_eq!((rt.state.edit.anchor, rt.state.edit.focus), (0, 3), "and selects no word");
+}

@@ -442,7 +442,9 @@ impl<S: 'static> Runtime<S> {
             }
             Action::Link(path, k, button) => {
                 one.button = button;
-                self.press_link(&path, k, &mut one)
+                let ran = self.press_link(&path, k, &mut one);
+                if std::mem::take(&mut one.press_taken) { self.restore_before_press(&path); }
+                ran
             }
             Action::LinkSecondary(path, k, point) => self.secondary_press_link(&path, k, point, &mut one),
             Action::SecondaryPress(path, point) => {
