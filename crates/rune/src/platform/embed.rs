@@ -212,6 +212,8 @@ impl<S: 'static> LayerHost<S> {
         }
         self.renderer.submit(&self.gpu.queue, encoder);
         self.gpu.queue.present(frame);
+        // As a macOS window: a slow frame holds the motion it started for its overrun.
+        self.clock.presented(&mut self.rt, Instant::now());
 
         let cpu_us = t0.elapsed().as_micros() as u64;
         let wake_after_secs = self.rt.wake_deadline().and_then(|d| {
