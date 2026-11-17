@@ -958,6 +958,9 @@ impl<S: 'static> Browser<S> {
         };
         // In the same commit as the frame: the canvas moves to where this frame drew it.
         r.sync_band(window);
+        // A slow frame (a big commit) holds the motion it started for its overrun, as a macOS
+        // window's does, so the time it took isn't charged to that motion.
+        if drawn { r.clock.presented(&mut r.rt, Instant::now()); }
         // Only an ambient loop's step (a frame its wake asked for, no commit, nothing else moving).
         let ambient = !input && !animating && r.rt.stats.commits == commits && r.rt.ambient.is_some();
         if drawn && !ambient { self.drawn_at = Some(now); }
